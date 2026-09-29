@@ -1,16 +1,14 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Juego Online</title>
 
     <style>
-
         * {
             box-sizing: border-box;
         }
@@ -90,10 +88,6 @@
             background: #3498db;
         }
 
-        .jugador2 {
-            background: #e74c3c;
-        }
-
         .otroJugador {
             background: #f1c40f;
         }
@@ -102,14 +96,10 @@
             color: #ffd166;
             margin-top: 15px;
         }
-
     </style>
-
 </head>
 
-
 <body>
-
 
     <!-- MENU -->
 
@@ -123,9 +113,7 @@
             Crear sala
         </button>
 
-
         <hr>
-
 
         <h2>Unirse</h2>
 
@@ -133,17 +121,16 @@
             id="codigoInput"
             maxlength="5"
             placeholder="Código de sala"
+            autocomplete="off"
         >
 
         <button id="unirseSala">
             Unirse a sala
         </button>
 
-
         <p id="mensaje"></p>
 
     </div>
-
 
 
     <!-- JUEGO -->
@@ -169,23 +156,26 @@
 
         </div>
 
-
         <div id="cancha"></div>
 
     </div>
 
 
+    <!-- SOCKET.IO -->
 
     <script src="/socket.io/socket.io.js"></script>
 
-
     <script>
+
+        // =========================
+        // CONEXIÓN
+        // =========================
 
         const socket = io();
 
+        // Elementos HTML
 
         const menu = document.getElementById("menu");
-
         const juego = document.getElementById("juego");
 
         const crearSala =
@@ -210,7 +200,13 @@
             document.getElementById("mensaje");
 
 
+        // =========================
+        // VARIABLES
+        // =========================
+
         let miId = null;
+
+        let estoyEnJuego = false;
 
         let miJugador = {
             x: 200,
@@ -218,30 +214,57 @@
         };
 
 
-        // ID de nuestro jugador
+        // =========================
+        // CONEXIÓN AL SERVIDOR
+        // =========================
 
         socket.on("connect", () => {
 
             miId = socket.id;
 
+            console.log(
+                "Conectado al servidor:",
+                miId
+            );
+
         });
 
 
+        socket.on("disconnect", () => {
+
+            console.log(
+                "Desconectado del servidor"
+            );
+
+            mensaje.textContent =
+                "Desconectado del servidor.";
+
+        });
+
+
+        // =========================
         // CREAR SALA
+        // =========================
 
         crearSala.addEventListener("click", () => {
+
+            mensaje.textContent =
+                "Creando sala...";
 
             socket.emit("crearSala");
 
         });
 
 
-        // UNIRSE
+        // =========================
+        // UNIRSE A SALA
+        // =========================
 
         unirseSala.addEventListener("click", () => {
 
             const codigo =
-                codigoInput.value.trim();
+                codigoInput.value.trim().toUpperCase();
+
 
             if (codigo === "") {
 
@@ -251,6 +274,20 @@
                 return;
             }
 
+
+            if (codigo.length !== 5) {
+
+                mensaje.textContent =
+                    "El código debe tener 5 caracteres.";
+
+                return;
+            }
+
+
+            mensaje.textContent =
+                "Uniéndote a la sala...";
+
+
             socket.emit(
                 "unirseSala",
                 codigo
@@ -259,24 +296,65 @@
         });
 
 
-        // ENTRAMOS AL JUEGO
+        // =========================
+        // SALA CREADA
+        // =========================
 
         socket.on("salaCreada", (datos) => {
+
+            entrarAlJuego(datos);
+
+        });
+
+
+        // =========================
+        // SALA UNIDA
+        // =========================
+
+        socket.on("salaUnida", (datos) => {
+
+            entrarAlJuego(datos);
+
+        });
+
+
+        // =========================
+        // ENTRAR AL JUEGO
+        // =========================
+
+        function entrarAlJuego(datos) {
 
             menu.style.display = "none";
 
             juego.style.display = "block";
 
-            codigoSala.textContent =
-                datos.codigo;
-
-            cantidadJugadores.textContent =
-                datos.jugadores;
-
-        });
+            estoyEnJuego = true;
 
 
+            if (datos.codigo) {
+
+                codigoSala.textContent =
+                    datos.codigo;
+
+            }
+
+
+            if (datos.jugadores !== undefined) {
+
+                cantidadJugadores.textContent =
+                    datos.jugadores;
+
+            }
+
+
+            mensaje.textContent = "";
+
+        }
+
+
+        // =========================
         // ACTUALIZAR JUGADORES
+        // =========================
 
         socket.on(
             "actualizarJugadores",
@@ -291,27 +369,39 @@
         );
 
 
-        // ERROR
+        // =========================
+        // ERROR DE SALA
+        // =========================
 
         socket.on("errorSala", (texto) => {
 
-            mensaje.textContent = texto;
+            mensaje.textContent =
+                texto;
 
         });
 
 
+        // =========================
         // MOSTRAR JUGADORES
+        // =========================
 
         function mostrarJugadores(jugadores) {
 
             cancha.innerHTML = "";
 
-            jugadores.forEach((jugador, indice) => {
+
+            jugadores.forEach((jugador) => {
 
                 const elemento =
                     document.createElement("div");
 
-                elemento.classList.add("jugador");
+
+                elemento.classList.add(
+                    "jugador"
+                );
+
+
+                // Nuestro jugador
 
                 if (jugador.id === miId) {
 
@@ -319,10 +409,18 @@
                         "jugador1"
                     );
 
-                    miJugador.x = jugador.x;
-                    miJugador.y = jugador.y;
 
-                } else {
+                    miJugador.x =
+                        jugador.x;
+
+                    miJugador.y =
+                        jugador.y;
+
+                }
+
+                // Otros jugadores
+
+                else {
 
                     elemento.classList.add(
                         "otroJugador"
@@ -345,7 +443,9 @@
         }
 
 
+        // =========================
         // TECLADO
+        // =========================
 
         const teclas = {};
 
@@ -354,7 +454,28 @@
             "keydown",
             (evento) => {
 
-                teclas[evento.key.toLowerCase()] = true;
+                const tecla =
+                    evento.key.toLowerCase();
+
+
+                // Evitar problemas con teclas repetidas
+
+                teclas[tecla] = true;
+
+
+                // Evitar que algunas teclas
+                // hagan scroll en la página
+
+                if (
+                    tecla === "w" ||
+                    tecla === "a" ||
+                    tecla === "s" ||
+                    tecla === "d"
+                ) {
+
+                    evento.preventDefault();
+
+                }
 
             }
         );
@@ -364,28 +485,38 @@
             "keyup",
             (evento) => {
 
-                teclas[evento.key.toLowerCase()] = false;
+                const tecla =
+                    evento.key.toLowerCase();
+
+                teclas[tecla] = false;
 
             }
         );
 
 
+        // =========================
         // MOVIMIENTO
+        // =========================
 
         function actualizarMovimiento() {
 
-            if (juego.style.display === "none") {
+            // Si todavía no estamos jugando
+
+            if (!estoyEnJuego) {
 
                 requestAnimationFrame(
                     actualizarMovimiento
                 );
 
                 return;
+
             }
 
 
             const velocidad = 5;
 
+
+            // W
 
             if (teclas["w"]) {
 
@@ -393,17 +524,26 @@
 
             }
 
+
+            // S
+
             if (teclas["s"]) {
 
                 miJugador.y += velocidad;
 
             }
 
+
+            // A
+
             if (teclas["a"]) {
 
                 miJugador.x -= velocidad;
 
             }
+
+
+            // D
 
             if (teclas["d"]) {
 
@@ -412,13 +552,18 @@
             }
 
 
-            // Limitar dentro de la cancha
+            // =========================
+            // LIMITAR JUGADOR
+            // =========================
+
+            const radioJugador = 20;
+
 
             miJugador.x =
                 Math.max(
-                    20,
+                    radioJugador,
                     Math.min(
-                        780,
+                        800 - radioJugador,
                         miJugador.x
                     )
                 );
@@ -426,15 +571,17 @@
 
             miJugador.y =
                 Math.max(
-                    20,
+                    radioJugador,
                     Math.min(
-                        480,
+                        500 - radioJugador,
                         miJugador.y
                     )
                 );
 
 
-            // Mandar posición al servidor
+            // =========================
+            // ENVIAR AL SERVIDOR
+            // =========================
 
             if (
                 teclas["w"] ||
@@ -445,11 +592,16 @@
 
                 socket.emit(
                     "moverJugador",
-                    miJugador
+                    {
+                        x: miJugador.x,
+                        y: miJugador.y
+                    }
                 );
 
             }
 
+
+            // Continuar el bucle
 
             requestAnimationFrame(
                 actualizarMovimiento
@@ -457,6 +609,8 @@
 
         }
 
+
+        // Iniciar movimiento
 
         actualizarMovimiento();
 
