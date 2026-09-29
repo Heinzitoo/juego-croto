@@ -100,6 +100,7 @@
 <body>
 
     <div id="menu">
+
         <h1>🎮 Juego Online</h1>
 
         <h2>Crear sala</h2>
@@ -124,10 +125,14 @@
         </button>
 
         <p id="mensaje"></p>
+
     </div>
 
+
     <div id="juego">
+
         <div id="informacion">
+
             <h2>
                 Sala:
                 <span id="codigoSala"></span>
@@ -142,27 +147,50 @@
             <p>
                 Usá W A S D para moverte
             </p>
+
         </div>
 
         <div id="cancha"></div>
+
     </div>
+
 
     <script src="/socket.io/socket.io.js"></script>
 
     <script>
+
         const socket = io();
 
-        const menu = document.getElementById("menu");
-        const juego = document.getElementById("juego");
-        const crearSala = document.getElementById("crearSala");
-        const unirseSala = document.getElementById("unirseSala");
-        const codigoInput = document.getElementById("codigoInput");
-        const codigoSala = document.getElementById("codigoSala");
-        const cantidadJugadores = document.getElementById("cantidadJugadores");
-        const cancha = document.getElementById("cancha");
-        const mensaje = document.getElementById("mensaje");
+        const menu =
+            document.getElementById("menu");
+
+        const juego =
+            document.getElementById("juego");
+
+        const crearSala =
+            document.getElementById("crearSala");
+
+        const unirseSala =
+            document.getElementById("unirseSala");
+
+        const codigoInput =
+            document.getElementById("codigoInput");
+
+        const codigoSala =
+            document.getElementById("codigoSala");
+
+        const cantidadJugadores =
+            document.getElementById("cantidadJugadores");
+
+        const cancha =
+            document.getElementById("cancha");
+
+        const mensaje =
+            document.getElementById("mensaje");
+
 
         let miId = null;
+
         let estoyEnJuego = false;
 
         let miJugador = {
@@ -170,144 +198,293 @@
             y: 200
         };
 
+
         const teclas = {};
 
+
         socket.on("connect", () => {
+
             miId = socket.id;
+
         });
+
 
         socket.on("disconnect", () => {
+
             estoyEnJuego = false;
-            mensaje.textContent = "Desconectado del servidor.";
+
+            mensaje.textContent =
+                "Desconectado del servidor.";
+
         });
 
-        crearSala.addEventListener("click", () => {
-            socket.emit("crearSala");
-        });
 
-        unirseSala.addEventListener("click", () => {
-            const codigo = codigoInput.value.trim().toUpperCase();
+        crearSala.addEventListener(
+            "click",
+            () => {
 
-            if (codigo === "") {
-                mensaje.textContent = "Escribí un código.";
-                return;
+                socket.emit("crearSala");
+
             }
+        );
 
-            if (codigo.length !== 5) {
-                mensaje.textContent = "El código debe tener 5 caracteres.";
-                return;
+
+        unirseSala.addEventListener(
+            "click",
+            () => {
+
+                const codigo =
+                    codigoInput.value
+                        .trim()
+                        .toUpperCase();
+
+
+                if (codigo === "") {
+
+                    mensaje.textContent =
+                        "Escribí un código.";
+
+                    return;
+
+                }
+
+
+                if (codigo.length !== 5) {
+
+                    mensaje.textContent =
+                        "El código debe tener 5 caracteres.";
+
+                    return;
+
+                }
+
+
+                socket.emit(
+                    "unirseSala",
+                    codigo
+                );
+
             }
+        );
 
-            socket.emit("unirseSala", codigo);
-        });
 
-        socket.on("salaCreada", (datos) => {
-            entrarAlJuego(datos);
-        });
+        socket.on(
+            "salaCreada",
+            (datos) => {
 
-        socket.on("salaUnida", (datos) => {
-            entrarAlJuego(datos);
-        });
+                entrarAlJuego(datos);
+
+            }
+        );
+
+
+        socket.on(
+            "salaUnida",
+            (datos) => {
+
+                entrarAlJuego(datos);
+
+            }
+        );
+
 
         function entrarAlJuego(datos) {
-            menu.style.display = "none";
-            juego.style.display = "block";
-            estoyEnJuego = true;
 
-            codigoSala.textContent = datos.codigo;
-            cantidadJugadores.textContent = datos.jugadores;
-            mensaje.textContent = "";
+            menu.style.display =
+                "none";
+
+            juego.style.display =
+                "block";
+
+            estoyEnJuego =
+                true;
+
+            codigoSala.textContent =
+                datos.codigo;
+
+            cantidadJugadores.textContent =
+                datos.jugadores;
+
+            mensaje.textContent =
+                "";
+
         }
 
-        socket.on("actualizarJugadores", (jugadores) => {
-            cantidadJugadores.textContent = jugadores.length;
 
-            jugadores.forEach((jugador) => {
-                if (jugador.id === miId && !teclaMovimiento()) {
-                    miJugador.x = jugador.x;
-                    miJugador.y = jugador.y;
-                }
-            });
+        socket.on(
+            "actualizarJugadores",
+            (jugadores) => {
 
-            mostrarJugadores(jugadores);
-        });
+                cantidadJugadores.textContent =
+                    jugadores.length;
 
-        socket.on("errorSala", (texto) => {
-            mensaje.textContent = texto;
-        });
+
+                jugadores.forEach(
+                    (jugador) => {
+
+                        if (
+                            jugador.id === miId &&
+                            !teclaMovimiento()
+                        ) {
+
+                            miJugador.x =
+                                jugador.x;
+
+                            miJugador.y =
+                                jugador.y;
+
+                        }
+
+                    }
+                );
+
+
+                mostrarJugadores(jugadores);
+
+            }
+        );
+
+
+        socket.on(
+            "errorSala",
+            (texto) => {
+
+                mensaje.textContent =
+                    texto;
+
+            }
+        );
+
 
         function mostrarJugadores(jugadores) {
+
             cancha.innerHTML = "";
 
-            jugadores.forEach((jugador) => {
-                const elemento = document.createElement("div");
 
-                elemento.classList.add("jugador");
+            jugadores.forEach(
+                (jugador) => {
 
-                if (jugador.id === miId) {
-                    elemento.classList.add("jugador1");
-                } else {
-                    elemento.classList.add("otroJugador");
+                    if (jugador.id === miId) {
+                        return;
+                    }
+
+
+                    const elemento =
+                        document.createElement("div");
+
+
+                    elemento.classList.add(
+                        "jugador",
+                        "otroJugador"
+                    );
+
+
+                    elemento.style.left =
+                        jugador.x + "px";
+
+                    elemento.style.top =
+                        jugador.y + "px";
+
+
+                    cancha.appendChild(
+                        elemento
+                    );
+
                 }
+            );
 
-                elemento.style.left = jugador.x + "px";
-                elemento.style.top = jugador.y + "px";
-
-                cancha.appendChild(elemento);
-            });
 
             dibujarJugadorLocal();
+
         }
 
-        document.addEventListener("keydown", (evento) => {
-            const tecla = evento.key.toLowerCase();
 
-            if (
-                tecla === "w" ||
-                tecla === "a" ||
-                tecla === "s" ||
-                tecla === "d"
-            ) {
-                evento.preventDefault();
-                teclas[tecla] = true;
+        document.addEventListener(
+            "keydown",
+            (evento) => {
+
+                const tecla =
+                    evento.key.toLowerCase();
+
+
+                if (
+                    tecla === "w" ||
+                    tecla === "a" ||
+                    tecla === "s" ||
+                    tecla === "d"
+                ) {
+
+                    evento.preventDefault();
+
+                    teclas[tecla] =
+                        true;
+
+                }
+
             }
-        });
+        );
 
-        document.addEventListener("keyup", (evento) => {
-            const tecla = evento.key.toLowerCase();
 
-            if (
-                tecla === "w" ||
-                tecla === "a" ||
-                tecla === "s" ||
-                tecla === "d"
-            ) {
-                teclas[tecla] = false;
+        document.addEventListener(
+            "keyup",
+            (evento) => {
+
+                const tecla =
+                    evento.key.toLowerCase();
+
+
+                if (
+                    tecla === "w" ||
+                    tecla === "a" ||
+                    tecla === "s" ||
+                    tecla === "d"
+                ) {
+
+                    teclas[tecla] =
+                        false;
+
+                }
+
             }
-        });
+        );
 
-        window.addEventListener("blur", () => {
-            teclas["w"] = false;
-            teclas["a"] = false;
-            teclas["s"] = false;
-            teclas["d"] = false;
-        });
+
+        window.addEventListener(
+            "blur",
+            () => {
+
+                teclas["w"] = false;
+                teclas["a"] = false;
+                teclas["s"] = false;
+                teclas["d"] = false;
+
+            }
+        );
+
 
         function teclaMovimiento() {
+
             return (
                 teclas["w"] ||
                 teclas["a"] ||
                 teclas["s"] ||
                 teclas["d"]
             );
+
         }
 
+
         let ultimoEnvio = 0;
+
         const intervaloServidor = 33;
 
+
         function actualizarMovimiento(timestamp) {
+
             if (estoyEnJuego) {
+
                 const velocidad = 5;
+
 
                 if (teclas["w"]) {
                     miJugador.y -= velocidad;
@@ -325,58 +502,108 @@
                     miJugador.x += velocidad;
                 }
 
-                miJugador.x = Math.max(
-                    20,
-                    Math.min(780, miJugador.x)
-                );
 
-                miJugador.y = Math.max(
-                    20,
-                    Math.min(480, miJugador.y)
-                );
+                miJugador.x =
+                    Math.max(
+                        20,
+                        Math.min(
+                            780,
+                            miJugador.x
+                        )
+                    );
+
+
+                miJugador.y =
+                    Math.max(
+                        20,
+                        Math.min(
+                            480,
+                            miJugador.y
+                        )
+                    );
+
 
                 dibujarJugadorLocal();
 
+
                 if (
                     teclaMovimiento() &&
-                    timestamp - ultimoEnvio >= intervaloServidor
+                    timestamp - ultimoEnvio >=
+                    intervaloServidor
                 ) {
-                    ultimoEnvio = timestamp;
 
-                    socket.emit("moverJugador", {
-                        x: miJugador.x,
-                        y: miJugador.y
-                    });
+                    ultimoEnvio =
+                        timestamp;
+
+
+                    socket.emit(
+                        "moverJugador",
+                        {
+                            x: miJugador.x,
+                            y: miJugador.y
+                        }
+                    );
+
                 }
+
             }
 
-            requestAnimationFrame(actualizarMovimiento);
+
+            requestAnimationFrame(
+                actualizarMovimiento
+            );
+
         }
 
+
         function dibujarJugadorLocal() {
+
             let jugadorLocal =
-                document.getElementById("miJugadorVisual");
+                document.getElementById(
+                    "miJugadorVisual"
+                );
+
 
             if (!jugadorLocal) {
-                jugadorLocal = document.createElement("div");
 
-                jugadorLocal.id = "miJugadorVisual";
+                jugadorLocal =
+                    document.createElement("div");
+
+
+                jugadorLocal.id =
+                    "miJugadorVisual";
+
 
                 jugadorLocal.classList.add(
                     "jugador",
                     "jugador1"
                 );
 
-                cancha.appendChild(jugadorLocal);
+
+                cancha.appendChild(
+                    jugadorLocal
+                );
+
             }
 
-            jugadorLocal.style.left = miJugador.x + "px";
-            jugadorLocal.style.top = miJugador.y + "px";
+
+            jugadorLocal.style.left =
+                miJugador.x + "px";
+
+            jugadorLocal.style.top =
+                miJugador.y + "px";
+
         }
 
-        requestAnimationFrame(actualizarMovimiento);
+
+        requestAnimationFrame(
+            actualizarMovimiento
+        );
+
     </script>
 
 </body>
 </html>
 ```
+
+Ahora **tu propio jugador solo se dibuja una vez**. Los jugadores recibidos del servidor se dibujan como amarillos, mientras que vos seguís siendo el jugador azul.
